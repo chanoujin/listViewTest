@@ -1,0 +1,16 @@
+{
+  "status": 200,
+  "success": true,
+  "msg": "登录成功",
+  "response": {
+    "login_status": 1,
+    "login_time": "2020-12-10T08:50:26.8957226+08:00",
+    "rightsid": "1",
+    "status": 1,
+    "usercode": "000",
+    "username": "系统管理员",
+    "createtime": "2020-12-08T15:21:18",
+    "userpass": "123456",
+    "id": 1
+  }
+}
