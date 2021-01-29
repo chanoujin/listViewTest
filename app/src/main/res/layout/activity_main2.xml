@@ -19,16 +19,26 @@
 
             <TextView
                 android:id="@+id/textView5"
-                android:layout_width="50dp"
+                android:layout_width="26dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="   卡号：" />
 
-            <TextView
-                android:id="@+id/CardID"
-                android:layout_width="wrap_content"
+            <EditText
+                android:id="@+id/CardId"
+                android:layout_width="136dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:ems="10"
+                android:inputType="textPersonName" />
+
+            <Button
+                android:id="@+id/found"
+                android:layout_width="21dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="查询" />
+
         </LinearLayout>
 
         <LinearLayout

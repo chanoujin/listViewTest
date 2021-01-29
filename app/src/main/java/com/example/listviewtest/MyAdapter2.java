@@ -25,35 +25,36 @@ public class MyAdapter2 extends BaseAdapter {
         mData2.add(data2);
         notifyDataSetChanged();
     }
-
+    public void remove(int position){
+        if(mData2 != null) {
+            mData2.remove(position);
+        }
+        notifyDataSetChanged();
+    }
     @Override
     public int getCount() {
         return mData2.size();
     }
-
     @Override
     public Object getItem(int position) {
         return mData2;
     }
-
     @Override
     public long getItemId(int position) {
         return position;
     }
-
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder holder = null;
         if(convertView == null){
-
             convertView = LayoutInflater.from(mContext2).
                     inflate(list_item3,parent,false);
             holder = new ViewHolder();
             holder.mModel = convertView.findViewById(R.id.model);
             holder.mNum = convertView.findViewById(R.id.num);
             holder.mPlan_sub_no = convertView.findViewById(R.id.plan_sub_no);
+            holder.mPlanw = convertView.findViewById(R.id.planWeight);
             convertView.setTag(holder);
-
         }
         else {
             holder = (ViewHolder)convertView.getTag();
@@ -61,12 +62,14 @@ public class MyAdapter2 extends BaseAdapter {
         holder.mModel.setText(mData2.get(position).getmModel());
         holder.mNum.setText(mData2.get(position).getmNum());
         holder.mPlan_sub_no.setText(mData2.get(position).getmPlan_sub_no());
+        holder.mPlanw.setText(mData2.get(position).getmPlanw());
         return convertView;
     }
     static class ViewHolder{
         TextView mModel;
         TextView mNum;
         TextView mPlan_sub_no;
+        TextView mPlanw;
 
     }
 }

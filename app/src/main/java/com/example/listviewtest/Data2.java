@@ -4,10 +4,12 @@ public class Data2 {
     String mModel;
     String mNum;
     String mPlan_sub_no;
-    Data2(String mModel,String mNum,String mPlan_sub_no){
+    String mPlanw;
+    Data2(String mModel,String mNum,String mPlanw,String mPlan_sub_no){
         this.mModel = mModel;
         this.mNum = mNum;
         this.mPlan_sub_no = mPlan_sub_no;
+        this.mPlanw = mPlanw;
 
     }
 
@@ -23,6 +25,10 @@ public class Data2 {
         return mPlan_sub_no;
     }
 
+    public String getmPlanw() {
+        return mPlanw;
+    }
+
     public void setmModel(String mModel) {
         this.mModel = mModel;
     }
@@ -33,5 +39,9 @@ public class Data2 {
 
     public void setmPlan_sub_no(String mPlan_sub_no) {
         this.mPlan_sub_no = mPlan_sub_no;
+    }
+
+    public void setmPlanw(String mPlanw) {
+        this.mPlanw = mPlanw;
     }
 }

@@ -17,6 +17,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,27 +36,26 @@ import java.util.Locale;
 import java.util.Objects;
 
 import static android.widget.Toast.makeText;
-
 public class Main2Activity extends AppCompatActivity{
+    public static String cjmsg = "asdlasd";
     private ListView listtwo;
     private MyAdapter myAdapter = null;
     private MyAdapter2 myAdapter2 = null;
     private List<Data> mData = null;
     private List<Data2> mData2 = null;
     private Context mContextt = null;
-    private TextView mCorporateName,mCarNum,mPlanWt,mRealWt,mCardId;
-    private Button button,button1;
+    private TextView mCorporateName,mCarNum,mPlanWt,mRealWt;
+    private Button button,button1,found;
+    private EditText mCardId;
     private NfcAdapter mNfcAdapter;
     private PendingIntent pi;
     private ArrayAdapter adapter;
     private String msg = "";
+    private String num="";
     public static String myurl =
             "http://172.15.20.15:8083/Arrange/QueryPageArrange?page=1&intPageSize=6";//订单信息请求地址
     public String myurl1 = "";//装车信息上传地址
     private int endWeight = 0;
-
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,33 +63,104 @@ public class Main2Activity extends AppCompatActivity{
         mCarNum = findViewById(R.id.carNum);
         mPlanWt = findViewById(R.id.planWt);
         mRealWt = findViewById(R.id.realWt);
-        mCardId = findViewById(R.id.CardID);
+        mCardId = findViewById(R.id.CardId);
+        found = findViewById(R.id.found);
+        //点击按卡号查询
+        found.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String mCarId = mCardId.getText().toString();
+                final String myurls = "&cardCode="+mCarId;
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            //根据卡号拉取装车计划
+                            String msgs = http_Get.getData(myurl+myurls);
+                            if (msgs==null){
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(Main2Activity.this,"无法连接服务器",Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                            else {
+                                JSONObject object = new JSONObject(msgs);
+                                JSONObject result = object.getJSONObject("response");
+                                System.out.println("一层"+result);
+                                final JSONArray mydata = result.getJSONArray("data");
+                                System.out.println("二层"+mydata);
+
+                                if (mydata.isNull(0)){
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            Toast.makeText(Main2Activity.this,"此车暂无计划",Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                }
+                                else {
+
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            for (int i=0;i<mydata.length();i++){
+
+                                                try {
+                                                    final JSONObject msg = mydata.getJSONObject(i);
+                                                    final String car_num = msg.getString("vc_no");//车牌号
+                                                    mCarNum.setText(car_num);
+                                                    String prod_cname = msg.getString("prod_cname");
+                                                    String spec_desc = msg.getString("spec_desc");//产品型号
+                                                    String plan_sub_no = msg.getString("plan_sub_no");//登记单号
+                                                    int num = msg.getInt("num");//计划数量
+                                                    int weight = msg.getInt("wt");//计划重量
+                                                    myAdapter2.add(new Data2(spec_desc, String.valueOf(num),
+                                                            String.valueOf(weight),plan_sub_no));
+                                                    endWeight =weight + endWeight;
+                                                    mPlanWt.setText(String.valueOf(endWeight));//计划总重量
+                                                } catch (JSONException e) {
+                                                    e.printStackTrace();
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+            }
+        });
         button = (Button)findViewById(R.id.button2);
-
-
         NfcBeg();
         mContextt = Main2Activity.this;
         bindViews();
-
         mData2 = new LinkedList<Data2>();
-
         myAdapter2 = new MyAdapter2((LinkedList<Data2>)mData2,mContextt);
-
         listtwo.setAdapter(myAdapter2);
         Utility.setListViewHeightBasedOnChildren(listtwo);
-
-
         //点击订单列表，获取订单信息，跳转至扫码出库界面
         listtwo.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 LinkedList<Data2>mDATA2 = (LinkedList<Data2>) myAdapter2.getItem(position);
-                String model = mDATA2.get(0).getmModel();
-                String num = mDATA2.get(0).getmNum();
+                String model = mDATA2.get(0).getmModel();//产品型号
+                num = mDATA2.get(0).getmNum();//数量
+                String weight = mDATA2.get(0).getmPlanw();//重量
+                String plan_sub_no = mDATA2.get(0).mPlan_sub_no;//单号
                 Intent intent = new Intent(Main2Activity.this,Main3Activity.class);
                 Bundle bd = new Bundle();
                 bd.putString("model",model);
                 bd.putString("num",num);
+                bd.putString("plan_sub_no",plan_sub_no);
+                bd.putString("weight",weight);
+                bd.putString("cardid",mCardId.getText().toString());
                 intent.putExtras(bd);
                 startActivity(intent);
             }
@@ -122,7 +193,6 @@ public class Main2Activity extends AppCompatActivity{
 
             }
         });*/
-
         //点击上传出库按钮
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -130,64 +200,120 @@ public class Main2Activity extends AppCompatActivity{
                 if (mCarNum.getText().toString()==null){
                     Toast.makeText(Main2Activity.this,"请刷卡",Toast.LENGTH_SHORT).show();
                 }
+
                 else {
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
+                            /*JSONObject obj = new JSONObject();
+                            try {
+                                obj.put("car_no",vc_no);//车号
+                                obj.put("id",12);//默认主键
+                                obj.put("code","");//出库编码
+                                obj.put("methodype",1);//出库方式
+                                obj.put("consigne_addr_name",consigne_addr_name);//收货地址
+                                obj.put("number",Integer.parseInt(num));//出库数量
+                                obj.put("consigne_user_name",consigne_user_name);//收货客户
+                                obj.put("specsname",specsname);//物料规格
+                                obj.put("createtime",time);//出库时间
+                                obj.put("userCode","01");//操作员编码
+                                obj.put("entruckingCode","01");//装车编码
+                                obj.put("userName",userName);//出库操作员
+                                obj.put("batchCode","01");//出库批次
+                                obj.put("goodsCode","");//物料编码
+                                obj.put("wareCode","");//入库编码
+                                obj.put("branchNum",Integer.parseInt(num));//出库支数
+                                obj.put("goodesName",mName.getText().toString());//物料名称
+                                obj.put("weight",wt1);//重量
+                                String branchURL = "http://172.15.20.15:8083/Delivery/SaveDeliveryList";
+                                String MyNews = postHttp.postdata(branchURL,obj.toString());
+                                JSONObject dataObj = new JSONObject(MyNews);
+                                boolean success = dataObj.getBoolean("success");
+                                /*if (!success){
+                                    break;
+                                }
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }*/
+
                             JSONObject obj = new JSONObject();
                             long timeGetTime = System.currentTimeMillis();
                             SimpleDateFormat simpleDateFormat = new SimpleDateFormat
                                     ("yyyy年MM月dd日HH时mm分ss秒", Locale.getDefault());
                             String time = simpleDateFormat.format(timeGetTime);
                             try {
-                                obj.put("createtime",time);//创建时间
-                                obj.put("plannum",12);//计划支数
-                                obj.put("devicecode","sad923ndals");//设备编号
-                                obj.put("planweight",15);//计划重量
-                                obj.put("id",12);//默认主键
-                                obj.put("realnum",12);//实际支数
-                                obj.put("last_devicecode","asdoo6");//最后操作设备
-                                obj.put("realweight",122);//实际重量
-                                obj.put("list_time","6813");//最后修改时间
-                                obj.put("status",1);//订单状态
-                                obj.put("last_usercode","cj");//最后操作员工
-                                obj.put("usercode",1);//创建员工编号
-                                obj.put("arrangecode","6561");//派车计划主键
-                                obj.put("last_username","lili");//最后操作员工姓名
-                                obj.put("username","askjd");//员工姓名
-                                obj.put("code","32");//装车编号
-                                obj.put("meteringcode","5648976d");//生产计划主键
-                                String ADD_URL = "http://172.15.20.15:8083/Entrucking/SaveEntrucking";
-                                String allMsg = postHttp.postdata(ADD_URL,obj.toString());
-                                System.out.println(allMsg);
-                                if (allMsg==null){
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            Toast.makeText(Main2Activity.this,"无法连接服务器",Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-                                }
-                                else {
-                                    JSONObject object = new JSONObject(allMsg);
-                                    boolean success = object.getBoolean("success");
-                                    if (success){
+                                //获取详细信息
+                                String msgs = http_Get.getData(myurl+mCardId.getText().toString());
+                                JSONObject obj1 = new JSONObject(msgs);
+                                JSONObject result = obj1.getJSONObject("response");
+                                final JSONArray mydata = result.getJSONArray("data");
+                                for (int i = 0 ;i<mydata.length();i++){
+                                    JSONObject message = mydata.getJSONObject(i);
+                                    String car_no = message.getString("vc_no");
+                                    String consigne_addr_name = message.getString("consigne_addr_name");
+                                    String consigne_user_name = message.getString("consigne_user_name");
+                                    String specsname = message.getString("spec_desc");
+                                    String goodsname = message.getString("prod_cname");
+                                    String  goodsCode = message.getString("mat_code");
+                                    int branchNum = message.getInt("pick_num");
+                                    Double weight = message.getDouble("wt");
+                                    int entruckingCode = message.getInt("id");
+
+                                    obj.put("car_no",car_no);//车号-装车计划
+                                    obj.put("id",12);//默认主键
+                                    obj.put("code","");//出库编码
+                                    obj.put("methodype",1);//出库方式
+                                    obj.put("consigne_addr_name",consigne_addr_name);//收货地址-装车计划
+                                    obj.put("number",1);//出库件数（默认为1）
+                                    obj.put("consigne_user_name",consigne_user_name);//收货客户-装车计划
+                                    obj.put("specsname",specsname);//物料规格
+                                    obj.put("createtime",time);//出库时间
+                                    obj.put("userCode","01");//操作员编码
+                                    obj.put("entruckingCode","01");//装车编码
+                                    obj.put("userName","");//出库操作员
+                                    obj.put("batchCode","01");//出库批次
+                                    obj.put("goodsCode",goodsCode);//物料编码==商品编码
+                                    obj.put("wareCode","");//入库编码
+                                    obj.put("branchNum",branchNum);//出库支数
+                                    obj.put("goodesName",goodsname);//物料名称
+                                    obj.put("weight",weight);//重量
+                                    obj.put("entruckingCode",entruckingCode);
+
+                                    String ADD_URL = "http://172.15.20.15:8083/Entrucking/SaveEntrucking";
+                                    String allMsg = postHttp.postdata(ADD_URL,obj.toString());
+                                    System.out.println(allMsg);
+                                    if (allMsg==null){
                                         runOnUiThread(new Runnable() {
                                             @Override
                                             public void run() {
-                                                Toast.makeText(Main2Activity.this,"上传成功",Toast.LENGTH_SHORT).show();
+                                                Toast.makeText(Main2Activity.this,"无法连接服务器",Toast.LENGTH_SHORT).show();
                                             }
                                         });
                                     }
                                     else {
-                                        runOnUiThread(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                Toast.makeText(Main2Activity.this,"上传失败",Toast.LENGTH_SHORT).show();
-                                            }
-                                        });
+                                        JSONObject object = new JSONObject(allMsg);
+                                        boolean success = object.getBoolean("success");
+                                        if (success){
+                                            runOnUiThread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    Toast.makeText(Main2Activity.this,"上传成功",Toast.LENGTH_SHORT).show();
+                                                }
+                                            });
+                                        }
+                                        else {
+                                            runOnUiThread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    Toast.makeText(Main2Activity.this,"上传失败",Toast.LENGTH_SHORT).show();
+                                                }
+                                            });
+                                        }
                                     }
                                 }
+
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             } catch (IOException e) {
@@ -246,7 +372,7 @@ public class Main2Activity extends AppCompatActivity{
         Tag tagFromIntent = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
         assert tagFromIntent != null;
         String mCarId = ByteArrayToHexString(tagFromIntent.getId());//卡号
-        mCardId.setText(mCarId);
+
         //makeText(this, mCarId, Toast.LENGTH_LONG).show();
         final String myurls = "&cardCode="+mCarId;
 
@@ -263,7 +389,6 @@ public class Main2Activity extends AppCompatActivity{
                                 Toast.makeText(Main2Activity.this,"无法连接服务器",Toast.LENGTH_SHORT).show();
                             }
                         });
-
                     }
                     else {
                         JSONObject object = new JSONObject(msgs);
@@ -281,23 +406,23 @@ public class Main2Activity extends AppCompatActivity{
                             });
                         }
                         else {
-                            final JSONObject msg = mydata.getJSONObject(0);
-                            final String userName = msg.getString("consigne_user_name");//公司名
-                            System.out.println("三层"+userName);
-                            final String car_num = msg.getString("vc_no");//车牌号
+
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    mCarNum.setText(car_num);
                                     for (int i=0;i<mydata.length();i++){
 
                                         try {
+                                            final JSONObject msg = mydata.getJSONObject(i);
+                                            final String car_num = msg.getString("vc_no");//车牌号
+                                            mCarNum.setText(car_num);
                                             String prod_cname = msg.getString("prod_cname");
                                             String spec_desc = msg.getString("spec_desc");//产品型号
                                             String plan_sub_no = msg.getString("plan_sub_no");//登记单号
                                             int num = msg.getInt("num");//计划数量
                                             int weight = msg.getInt("wt");//计划重量
-                                            myAdapter2.add(new Data2(spec_desc, String.valueOf(num),plan_sub_no));
+                                            myAdapter2.add(new Data2(spec_desc, String.valueOf(num),
+                                                    String.valueOf(weight),plan_sub_no));
                                             endWeight =weight + endWeight;
                                             mPlanWt.setText(String.valueOf(endWeight));//计划总重量
                                         } catch (JSONException e) {
