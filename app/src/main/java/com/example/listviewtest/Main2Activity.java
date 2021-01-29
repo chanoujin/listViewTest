@@ -52,6 +52,7 @@ public class Main2Activity extends AppCompatActivity{
     private ArrayAdapter adapter;
     private String msg = "";
     private String num="";
+    //更改项目状态
     public static String myurl =
             "http://172.15.20.15:8083/Arrange/QueryPageArrange?page=1&intPageSize=6";//订单信息请求地址
     public String myurl1 = "";//装车信息上传地址
